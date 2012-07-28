@@ -2,6 +2,14 @@ from json import JSONEncoder, JSONDecoder
 from tweepy import API, OAuthHandler, TweepError
 import os
 
+def loadfile(mode):
+    if os.name == 'nt':
+        home_path = os.path.expanduser('~{0}'.format(os.environ['USERNAME']))
+    elif os.name == 'posix':
+        home_path = os.environ['HOME']
+    f = open('{0}/.wtweet'.format(home_path), mode)
+    return f
+
 class WTweetUser:
     def __init__(self):
         _CONSUMER_KEY = '9o4scrLHTFt7NzyVxD5Q'
@@ -16,7 +24,7 @@ class WTweetUser:
         return self.__auth_handler
 
     def logout(self):
-        with open('{0}/.wtweet'.format(os.environ['HOME']), 'r+w') as f:
+        with loadfile('w') as f:
             f.truncate()
             f.close()
         print 'logout successful!'
@@ -29,7 +37,7 @@ class WTweetUser:
             self.__auth_handler.get_access_token(verifier=verifier)
             access_token = { 'key': self.__auth_handler.access_token.key, 'secret': self.__auth_handler.access_token.secret }
 
-            with open('{0}/.wtweet'.format(os.environ['HOME']), 'w+') as f:
+            with loadfile('w+') as f:
                 f.truncate()
                 f.write(JSONEncoder().encode(access_token))
                 f.close()
@@ -39,9 +47,9 @@ class WTweetUser:
         return WTweetTimeline(self)
 
     def is_login(self):
-        f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
-        cfg = f.readline()
-        f.close()
+        with loadfile('r') as f:
+            cfg = f.readline()
+            f.close()
         access_token = JSONDecoder().decode(cfg)
 
         if 'key' in access_token and 'secret' in access_token:
@@ -51,9 +59,9 @@ class WTweetUser:
             return False
 
     def get_timeline(self):
-        f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
-        cfg = f.readline()
-        f.close()
+        with loadfile('r') as f:
+            cfg = f.readline()
+            f.close()
         self.set_access_token(JSONDecoder().decode(cfg))
         return WTweetTimeline(self)
 
