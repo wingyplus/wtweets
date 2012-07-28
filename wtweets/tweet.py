@@ -1,5 +1,6 @@
 from json import JSONEncoder, JSONDecoder
 from tweepy import API, OAuthHandler, TweepError
+import os
 
 class WTweetUser:
     def __init__(self):
@@ -64,7 +65,7 @@ class WTweetTimeline:
         self.api.update_status(message)
 
 def main():
-    import sys, os
+    import sys
 
     if sys.argv[1] == 'login':
         user = WTweetUser().login()
@@ -75,3 +76,5 @@ def main():
             user = WTweetUser().get_timeline()
 
         user.tweet(sys.argv[1])
+
+    return 0
