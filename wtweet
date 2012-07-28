@@ -17,6 +17,12 @@ class WTweetUser:
     def get_auth_handler(self):
         return self.__auth_handler
 
+    def logout(self):
+        with open('{0}/.wtweet'.format(os.environ['HOME']), 'r+w') as f:
+            f.truncate()
+            f.close()
+        print 'logout successful!'
+
     def login(self):
         try:
             auth_url = self.__auth_handler.get_authorization_url()
@@ -65,6 +71,8 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'login':
         user = WTweetUser().login()
+    elif sys.argv[1] == 'logout':
+        user = WTweetUser().logout()
     else:
         if WTweetUser().is_login():
             user = WTweetUser().get_timeline()
