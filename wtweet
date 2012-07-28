@@ -1,45 +1,71 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from tweepy import OAuthHandler, TweepError, API
 
-class TwitterUser:
-    pass
+from json import JSONEncoder, JSONDecoder
+from tweepy import API, OAuthHandler, TweepError
 
-class TwitterTimeline:
+class WTweetUser:
     def __init__(self):
-        pass
+        _CONSUMER_KEY = '9o4scrLHTFt7NzyVxD5Q'
+        _CONSUMER_SECRET = 'xlrPmai1QgNTRQTf86inp1bzEFLgEXD7XuN5ZENKAU'
+        self.__auth = OAuthHandler(_CONSUMER_KEY, _CONSUMER_SECRET)
+        self.__access_token = None
 
-    def tweet(message=''):
-        pass
+    def set_access_token(self, access_token):
+        self.__access_token = self.__auth.set_access_token(key=access_token['key'], secret=access_token['secret'])
 
-if __name__ == '__main__':
-    import sys, os
-    from json import JSONEncoder, JSONDecoder
-    # tweet_msg = sys.argv[1]
+    def get_authentication(self):
+        return self.__auth
 
-    CONSUMER_KEY = '9o4scrLHTFt7NzyVxD5Q'
-    CONSUMER_SECRET = 'xlrPmai1QgNTRQTf86inp1bzEFLgEXD7XuN5ZENKAU'
-
-    try:
-        auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-
-        if sys.argv[1] == 'config':
-            auth_url = auth.get_authorization_url()
-            print auth_url
-            verifier = raw_input('PIN: ').strip()
-            auth.get_access_token(verifier=verifier)
-            access_token = { 'key': auth.access_token.key, 'secret': auth.access_token.secret }
+    def login(self):
+        try:
+            self.auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+            auth_url = self.auth.get_authorization_url()
+            print 'give me a pin code from url: {0}'.format(auth_url)
+            verifier = raw_input('enter a pin code: ').strip()
+            self.auth.get_access_token(verifier=verifier)
+            access_token = { 'key': self.auth.access_token.key, 'secret': self.auth.access_token.secret }
             f = open('{0}/.wtweet'.format(os.environ['HOME']), 'w+')
             f.write(JSONEncoder().encode(access_token))
             f.close()
-        else:
-            f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
-            cfg = f.readline()
-            f.close()
-            access_token = JSONDecoder().decode(cfg)
-            auth.set_access_token(key=access_token['key'], secret=access_token['secret'])
-            api = API(auth)
-            api.update_status(sys.argv[1])
-    except TweepError as err:
-        print 'Error: ', err.__str__()
+        except TweepError as err:
+            print err.__str__()
 
+        return TwitterTimeline(self.auth)
+
+    def is_login(self):
+        f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
+        cfg = f.readline()
+        f.close()
+        access_token = JSONDecoder().decode(cfg)
+
+        if 'key' in access_token and 'secret' in access_token:
+            self.set_access_token(access_token=access_token)
+            return True
+        else:
+            return False
+
+    def get_timeline(self):
+        f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
+        cfg = f.readline()
+        f.close()
+        self.set_access_token(JSONDecoder().decode(cfg))
+        return WTweetTimeline(self)
+
+class WTweetTimeline:
+    def __init__(self, wtweet_user):
+        self.api = API(wtweet_user.get_authentication())
+
+    def tweet(self, message=''):
+        self.api.update_status(message)
+
+if __name__ == '__main__':
+    import sys, os
+
+    if sys.argv[1] == 'login':
+        user = WTweetUser().login()
+    else:
+        if WTweetUser().is_login():
+            user = WTweetUser().get_timeline()
+
+        user.tweet(sys.argv[1])
