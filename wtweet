@@ -8,30 +8,31 @@ class WTweetUser:
     def __init__(self):
         _CONSUMER_KEY = '9o4scrLHTFt7NzyVxD5Q'
         _CONSUMER_SECRET = 'xlrPmai1QgNTRQTf86inp1bzEFLgEXD7XuN5ZENKAU'
-        self.__auth = OAuthHandler(_CONSUMER_KEY, _CONSUMER_SECRET)
+        self.__auth_handler = OAuthHandler(_CONSUMER_KEY, _CONSUMER_SECRET)
         self.__access_token = None
 
     def set_access_token(self, access_token):
-        self.__access_token = self.__auth.set_access_token(key=access_token['key'], secret=access_token['secret'])
+        self.__access_token = self.__auth_handler.set_access_token(key=access_token['key'], secret=access_token['secret'])
 
-    def get_authentication(self):
-        return self.__auth
+    def get_auth_handler(self):
+        return self.__auth_handler
 
     def login(self):
         try:
-            self.auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-            auth_url = self.auth.get_authorization_url()
+            auth_url = self.__auth_handler.get_authorization_url()
             print 'give me a pin code from url: {0}'.format(auth_url)
             verifier = raw_input('enter a pin code: ').strip()
-            self.auth.get_access_token(verifier=verifier)
-            access_token = { 'key': self.auth.access_token.key, 'secret': self.auth.access_token.secret }
-            f = open('{0}/.wtweet'.format(os.environ['HOME']), 'w+')
-            f.write(JSONEncoder().encode(access_token))
-            f.close()
+            self.__auth_handler.get_access_token(verifier=verifier)
+            access_token = { 'key': self.__auth_handler.access_token.key, 'secret': self.__auth_handler.access_token.secret }
+
+            with open('{0}/.wtweet'.format(os.environ['HOME']), 'w+') as f:
+                f.truncate()
+                f.write(JSONEncoder().encode(access_token))
+                f.close()
         except TweepError as err:
             print err.__str__()
 
-        return TwitterTimeline(self.auth)
+        return WTweetTimeline(self)
 
     def is_login(self):
         f = open('{0}/.wtweet'.format(os.environ['HOME']), 'r')
@@ -54,7 +55,7 @@ class WTweetUser:
 
 class WTweetTimeline:
     def __init__(self, wtweet_user):
-        self.api = API(wtweet_user.get_authentication())
+        self.api = API(wtweet_user.get_auth_handler())
 
     def tweet(self, message=''):
         self.api.update_status(message)
